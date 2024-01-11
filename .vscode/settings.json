@@ -5,5 +5,8 @@
   "deno.enable": true,
   "editor.inlayHints.enabled": "off",
   "deno.lint": true,
-  "deno.unstable": true
+  "deno.unstable": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  }
 }

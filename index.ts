@@ -1,7 +1,8 @@
 import { Hono } from "https://deno.land/x/hono@v3.4.1/mod.ts";
 import { load } from "https://deno.land/std@0.198.0/dotenv/mod.ts";
 import { Payload } from "./types.ts";
-import { tweet, uploadMediaFromURL } from "./twitter.ts";
+import { tweet } from "./twitter.ts";
+import { isUploadableMedia, uploadMedia } from "./twitterMedia.ts";
 
 const timelog = (text: string, content?: string) => {
   console.log(
@@ -39,31 +40,38 @@ app.post("/", async (c) => {
     timelog(msg);
     return c.text(msg, 403);
   }
-  const uploadableImages = (files ?? []).filter((f) =>
-    f.type === "image/jpeg" || f.type === "image/png" ||
-    f.type === "image/webp"
+  const medias = await Promise.all(
+    (files ?? []).map(async (file) =>
+      await isUploadableMedia(file.url, file.type)
+    ),
   );
-  const uploadableVideos = (files ?? []).filter((f) =>
-    f.type === "image/gif" || f.type === "video/mp4"
-  );
-  const [uploadFiles, unuploadFiles] = uploadableVideos.length > 0
-    ? [
-      uploadableImages.slice(0, 1),
-      [
-        ...uploadableImages,
-        ...uploadableVideos.slice(1),
-      ],
-    ]
-    : [
-      uploadableImages.slice(0, 4),
-      [
-        ...uploadableImages.slice(4),
-        ...uploadableVideos,
-      ],
-    ];
+  console.log(medias);
+  const unuploadFiles: { url: string; type: string }[] = [];
+  const uploadableMedias: {
+    url: string;
+    blob: Blob;
+    type: "image" | "gif" | "video";
+  }[] = [];
+  for (const media of medias) {
+    if (
+      media.uploadable &&
+      (uploadableMedias.length < 4 && uploadableMedias.every((m) =>
+            m.type === "image"
+          ) &&
+          media.type === "image" ||
+        uploadableMedias.length < 1 && media.type !== "image")
+    ) {
+      uploadableMedias.push(media);
+    } else {
+      unuploadFiles.push({
+        url: media.url,
+        type: media.uploadable ? media.blob.type : media.type,
+      });
+    }
+  }
   const mediaIds = await Promise.all(
-    uploadFiles.map(async (file) =>
-      await uploadMediaFromURL(file.url, file.type, authToken, ct0)
+    uploadableMedias.map(async (media) =>
+      await uploadMedia(media.blob, media.type, authToken, ct0)
     ),
   );
 
@@ -73,7 +81,9 @@ app.post("/", async (c) => {
       !(f.type.includes("image") || f.type === "video/mp4")
     ),
   ].reduce((p: string, c) => {
-    return `${p}\n${c.type.includes("image") ? "🖼" : "📄"} ${c.url}`;
+    return `${p}\n${
+      c.type.includes("image") ? "🖼" : c.type.includes("video") ? "📹" : "📄"
+    } ${c.url}`;
   }, "");
   const tweetContent = (cw ? `${cw}...\n\n` : "") + (text ?? "") + filesStr;
   if (!tweetContent) {
