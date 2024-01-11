@@ -12,9 +12,10 @@ type Note = {
   files: File[];
 };
 
-type File = {
+export type File = {
   url: string;
   type: string;
+  size: number;
 };
 
 export type CreateTweetRequest = {

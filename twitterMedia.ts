@@ -1,36 +1,41 @@
-import { download } from "https://deno.land/x/download@v2.0.2/mod.ts";
 // @deno-types="npm:@types/ffprobe-static";
 import ffprobeStatic from "npm:ffprobe-static";
 // @deno-types="npm:@types/ffprobe";
 import ffprobe from "npm:ffprobe";
+import { File } from "./types.ts";
 
 export const isUploadableMedia = async (
-  url: string,
-  mime: string,
+  file: File,
 ): Promise<
-  { uploadable: true; url: string; blob: Blob; type: "image" | "gif" | "video" } | {
+  | {
+    uploadable: true;
+    url: string;
+    blob: Blob;
+    type: "image" | "gif" | "video";
+  }
+  | {
     uploadable: false;
     url: string;
     type: string;
   }
 > => {
+  const { url, type: mime, size } = file;
   if (mime === "image/jpeg" || mime === "image/png" || mime === "image/webp") {
     const res = await fetch(url);
     const blob = await res.blob();
 
-    return blob.size <= 5 * 1024 * 1024
+    return size <= 5 * 1024 * 1024
       ? { uploadable: true, url, blob, type: "image" }
       : { uploadable: false, url, type: mime };
   } else if (mime === "image/gif") {
     const res = await fetch(url);
     const blob = await res.blob();
-    return blob.size <= 15 * 1024 * 1024
+    return size <= 15 * 1024 * 1024
       ? { uploadable: true, url, blob, type: "gif" }
       : { uploadable: false, url, type: mime };
   } else if (mime.startsWith("video/")) {
-    const fileInfo = await download(url);
     // ファイルサイズが512MB以下であること
-    if (fileInfo.size > 512 * 1024 * 1024) {
+    if (size > 512 * 1024 * 1024) {
       return {
         uploadable: false,
         url,
@@ -38,7 +43,7 @@ export const isUploadableMedia = async (
       };
     }
 
-    const videoInfo = await ffprobe(fileInfo.fullPath, {
+    const videoInfo = await ffprobe(url, {
       path: ffprobeStatic.path,
     });
     console.log(videoInfo);
@@ -143,10 +148,13 @@ export const isUploadableMedia = async (
       };
     }
 
+    const res = await fetch(url);
+    const blob = await res.blob();
+
     return {
       uploadable: true,
       url,
-      blob: new Blob([await Deno.readFile(fileInfo.fullPath)], { type: mime }),
+      blob,
       type: "video",
     };
   } else {

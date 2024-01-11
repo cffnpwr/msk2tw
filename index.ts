@@ -41,9 +41,7 @@ app.post("/", async (c) => {
     return c.text(msg, 403);
   }
   const medias = await Promise.all(
-    (files ?? []).map(async (file) =>
-      await isUploadableMedia(file.url, file.type)
-    ),
+    (files ?? []).map(async (file) => await isUploadableMedia(file)),
   );
   console.log(medias);
   const unuploadFiles: { url: string; type: string }[] = [];
