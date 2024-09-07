@@ -7,7 +7,7 @@ export type Payload = {
 type Note = {
   text: string | null;
   cw: string | null;
-  visibility: "public" | "home" | "followers" | "specified";
+  visibility: 'public' | 'home' | 'followers' | 'specified';
   localOnly: boolean;
   files: File[];
 };
@@ -42,7 +42,7 @@ export type CreateTweetRequest = {
     freedom_of_speech_not_reach_fetch_enabled: boolean;
     standardized_nudges_misinfo: boolean;
     tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled:
-      boolean;
+    boolean;
     responsive_web_media_download_video_enabled: boolean;
     responsive_web_graphql_skip_user_profile_image_extensions_enabled: boolean;
     responsive_web_graphql_timeline_navigation_enabled: boolean;
