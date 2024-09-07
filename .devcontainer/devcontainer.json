@@ -1,0 +1,10 @@
+{
+	"name": "msk2tw",
+	"image": "mcr.microsoft.com/devcontainers/base:debian",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {},
+		"ghcr.io/devcontainers-community/features/deno:1": {},
+		"ghcr.io/prulloac/devcontainer-features/bun:1": {}
+	}
+}
